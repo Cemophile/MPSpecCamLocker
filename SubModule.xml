@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Module>
+	<Name value="MPSpecCamLocker"/>
+	<Id value="MPSpecCamLocker"/>
+	<Version value="v1.0.0"/>
+	<ModuleCategory value="MultiplayerOptional"/>
+	<SubModules>
+		<SubModule>
+			<Name value="MPSpecCamLocker"/>
+			<DLLName value="MPSpecCamLocker.dll"/>
+			<SubModuleClassType value="MPSpecCamLocker.SubModule"/>
+		</SubModule>
+	</SubModules>
+</Module>

@@ -1,0 +1,79 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net472</TargetFramework>
+		<LangVersion>10</LangVersion>
+		<Nullable>enable</Nullable>
+
+		<ModuleName>MPSpecCamLocker</ModuleName>
+		<AssemblyName>MPSpecCamLocker</AssemblyName>
+
+		<GameFolder>C:\Program Files (x86)\Steam\steamapps\common\Mount &amp; Blade II Bannerlord</GameFolder>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<Authors>Vader</Authors>
+		<Version>1.0.0</Version>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<OutputPath>$(GameFolder)\Modules\$(ModuleName)\bin\Win64_Shipping_Client\</OutputPath>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.Library.dll">
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.Core.dll">
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.dll">
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.Engine.dll">
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.InputSystem.dll">
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="$(GameFolder)\Modules\Native\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.View.dll">
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.DotNet.dll">
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.ScreenSystem.dll">
+			<Private>False</Private>
+		</Reference>
+	<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.Diamond.dll">
+		<Private>False</Private>
+	</Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="$(GameFolder)\Modules\Native\bin\Win64_Shipping_Client\Newtonsoft.Json.dll">
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="Microsoft.CSharp" />
+		<Reference Include="System.Data" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="SubModule.xml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Properties\" />
+	</ItemGroup>
+
+	<Target Name="CopySubModule" AfterTargets="Build">
+		<Copy SourceFiles="SubModule.xml" DestinationFolder="$(GameFolder)\Modules\$(ModuleName)\" />
+	</Target>
+
+	<Target Name="CopyGUI" AfterTargets="Build">
+		<ItemGroup>
+			<GUIFiles Include="GUI\**\*.*" />
+		</ItemGroup>
+		<Copy SourceFiles="@(GUIFiles)" DestinationFolder="$(GameFolder)\Modules\$(ModuleName)\GUI\%(RecursiveDir)" />
+	</Target>
+</Project>
