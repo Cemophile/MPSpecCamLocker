@@ -20,6 +20,10 @@ namespace MPSpecCamLocker
         private MissionPeer _cachedPeer;
         private Team _cachedTeam;
 
+        private Vec3 _smoothedLookDir;
+        private Vec3 _smoothedCamPos;
+        private Agent _lastSmoothedTarget;
+
         private Camera _customCamera;
         private float _customDistance = 3.2f;
 
@@ -82,7 +86,7 @@ namespace MPSpecCamLocker
 
             bool isObserving = IsObserving();
 
-            // F10
+            // F8
             if (Input.IsKeyReleased(InputKey.F8) && isObserving)
             {
                 _isPerspectiveLocked = !_isPerspectiveLocked;
@@ -130,7 +134,7 @@ namespace MPSpecCamLocker
                 _customDistance = MBMath.ClampFloat(_customDistance, 1.5f, 6.0f);
             }
 
-            // Custom camera values. Do not edit.
+            // Custom cam
             if (_customCamera == null)
             {
                 _customCamera = Camera.CreateCamera();
@@ -139,18 +143,43 @@ namespace MPSpecCamLocker
             MatrixFrame matrixFrame = MatrixFrame.Identity;
             matrixFrame.rotation.RotateAboutSide(1.5707964f);
 
-            Vec3 lookDir = targetAgent.LookDirection;
-            matrixFrame.rotation.RotateAboutForward(lookDir.AsVec2.RotationInRadians);
+            Vec3 targetLookDir = targetAgent.LookDirection;
+            Vec3 eyePos = targetAgent.VisualPosition + new Vec3(0f, 0f, targetAgent.GetEyeGlobalHeight());
+            float heightOffset = 0.35f + (_customDistance * 0.05f);
+            Vec3 targetCamPos = eyePos - (targetLookDir * _customDistance) + (Vec3.Up * heightOffset);
 
-            float clampedZ = TaleWorlds.Library.MathF.Clamp(lookDir.z, -1f, 1f);
+            // Collision check
+            float collisionDistance;
+            if (Mission.Current.Scene.RayCastForClosestEntityOrTerrain(eyePos, targetCamPos, out collisionDistance, 0.2f, BodyFlags.CommonCollisionExcludeFlags))
+            {
+                Vec3 dir = targetCamPos - eyePos;
+                dir.Normalize();
+                float safeDistance = TaleWorlds.Library.MathF.Max(0f, collisionDistance - 0.2f);
+                targetCamPos = eyePos + (dir * safeDistance);
+            }
+
+            // SMOOTH TRACKING
+            if (_lastSmoothedTarget != targetAgent)
+            {
+                _smoothedLookDir = targetLookDir;
+                _smoothedCamPos = targetCamPos;
+                _lastSmoothedTarget = targetAgent;
+            }
+            else
+            {   // Decrase 15f to lower the tracking smoothness, increase to make it smoother.
+                float t = TaleWorlds.Library.MathF.Clamp(15f * dt, 0f, 1f);
+
+                _smoothedLookDir = (_smoothedLookDir * (1f - t)) + (targetLookDir * t);
+                _smoothedLookDir.Normalize();
+
+                _smoothedCamPos = (_smoothedCamPos * (1f - t)) + (targetCamPos * t);
+            }
+
+            matrixFrame.rotation.RotateAboutForward(_smoothedLookDir.AsVec2.RotationInRadians);
+            float clampedZ = TaleWorlds.Library.MathF.Clamp(_smoothedLookDir.z, -1f, 1f);
             matrixFrame.rotation.RotateAboutSide(TaleWorlds.Library.MathF.Asin(clampedZ));
 
-            Vec3 eyePos = targetAgent.VisualPosition + new Vec3(0f, 0f, targetAgent.GetEyeGlobalHeight());
-
-            float heightOffset = 0.35f + (_customDistance * 0.05f);
-            Vec3 camPos = eyePos - (lookDir * _customDistance) + (Vec3.Up * heightOffset);
-
-            matrixFrame.origin = camPos;
+            matrixFrame.origin = _smoothedCamPos;
             _customCamera.Frame = matrixFrame;
 
             _customCamera.SetFovVertical(0.785398f, 1.7777f, 0.1f, 1000f);
