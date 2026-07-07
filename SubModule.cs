@@ -12,7 +12,7 @@ namespace MPSpecCamLocker
         protected override void OnSubModuleLoad()
         {
             base.OnSubModuleLoad();
-            InformationManager.DisplayMessage(new InformationMessage("MPSpecCamLocker Loaded", Colors.Green));
+            InformationManager.DisplayMessage(new InformationMessage("MPSpecCamLocker Loaded", Colors.White));
         }
 
         public override void OnMissionBehaviorInitialize(Mission mission)
@@ -67,11 +67,11 @@ namespace MPSpecCamLocker
                 }
 
                 field.SetValue(gameClient, newList);
-                InformationManager.DisplayMessage(new InformationMessage("MPSpecCamLocker: Ready for official servers!", Colors.Green));
+                InformationManager.DisplayMessage(new InformationMessage("MPSpecCamLocker ready. Developed by Vader", Colors.Yellow));
             }
             catch (Exception ex)
             {
-                InformationManager.DisplayMessage(new InformationMessage($"MPSpecCamLocker Error: {ex.Message}", Colors.Yellow));
+                InformationManager.DisplayMessage(new InformationMessage($"MPSpecCamLocker Error: {ex.Message}", Colors.Red));
             }
         }
     }

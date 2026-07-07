@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using TaleWorlds.Core;
+using TaleWorlds.Engine;
 using TaleWorlds.InputSystem;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
@@ -17,13 +19,55 @@ namespace MPSpecCamLocker
         private bool _isPerspectiveLocked;
         private MissionPeer _cachedPeer;
         private Team _cachedTeam;
-        private object _originalCameraModeLogic;
+
+        private Camera _customCamera;
+        private float _customDistance = 3.2f;
 
         public override void OnMissionScreenInitialize()
         {
             base.OnMissionScreenInitialize();
             MissionScreen.SetCustomAgentListToSpectateGatherer(
                 new MissionScreen.GatherCustomAgentListToSpectateDelegate(SpectatableAgents));
+        }
+
+        private bool IsObserving()
+        {
+            if (_cachedPeer == null)
+                return true;
+            return _cachedPeer.ControlledAgent == null || !_cachedPeer.ControlledAgent.IsActive();
+        }
+
+        private void SwitchSpectatedAgent(int direction)
+        {
+            List<Agent> agents = SpectatableAgents(null);
+            if (agents == null || agents.Count == 0) return;
+
+            Agent current = MissionScreen.LastFollowedAgent;
+            int currentIndex = current != null ? agents.IndexOf(current) : -1;
+
+            if (direction > 0)
+            {
+                currentIndex = (currentIndex + 1) % agents.Count;
+            }
+            else
+            {
+                currentIndex--;
+                if (currentIndex < 0)
+                    currentIndex = agents.Count - 1;
+            }
+
+            Agent nextAgent = agents[currentIndex];
+
+            if (nextAgent != current)
+            {
+                
+                PropertyInfo prop = typeof(MissionScreen).GetProperty("LastFollowedAgent", BindingFlags.Public | BindingFlags.Instance);
+                if (prop != null)
+                {
+                    MethodInfo setter = prop.GetSetMethod(true);
+                    setter?.Invoke(MissionScreen, new object[] { nextAgent });
+                }
+            }
         }
 
         public override void OnMissionScreenTick(float dt)
@@ -36,44 +80,82 @@ namespace MPSpecCamLocker
             if (_cachedPeer != null && _cachedTeam != _cachedPeer.Team)
                 _cachedTeam = _cachedPeer.Team;
 
-            if (_isPerspectiveLocked)
+            bool isObserving = IsObserving();
+
+            // F10
+            if (Input.IsKeyReleased(InputKey.F8) && isObserving)
             {
-                MissionScreen.SetFieldValue("_missionCameraModeLogic", null);
-                MissionScreen.SetCameraLockState(true);
+                _isPerspectiveLocked = !_isPerspectiveLocked;
+                InformationManager.DisplayMessage(
+                    new InformationMessage("CamLock: " + (_isPerspectiveLocked ? "ON" : "OFF"),
+                        Color.ConvertStringToColor("#FFDDDDFF")));
             }
 
-            if (!Input.IsKeyReleased(InputKey.F10))
+            // Change the current player your spectating 
+            if (_isPerspectiveLocked && isObserving)
+            {
+                if (Input.IsKeyReleased(InputKey.LeftMouseButton))
+                {
+                    SwitchSpectatedAgent(1); // next player
+                }
+                else if (Input.IsKeyReleased(InputKey.RightMouseButton))
+                {
+                    SwitchSpectatedAgent(-1); // previous
+                }
+            }
+
+            Agent targetAgent = MissionScreen.LastFollowedAgent;
+
+            bool isTargetValid = targetAgent != null && targetAgent.IsActive() && targetAgent.AgentVisuals != null;
+
+            if (!_isPerspectiveLocked || !isObserving || !isTargetValid)
+            {
+                if (MissionScreen.CustomCamera != null && MissionScreen.CustomCamera == _customCamera)
+                {
+                    MissionScreen.CustomCamera = null;
+                }
+
+                if (!isObserving && _isPerspectiveLocked)
+                {
+                    _isPerspectiveLocked = false;
+                }
                 return;
-
-            if (!IsSpectator())
-                return;
-
-            _isPerspectiveLocked = !_isPerspectiveLocked;
-
-            bool isFreeCam = MissionScreen.LastFollowedAgent == null;
-
-            if (_isPerspectiveLocked)
-            {
-                var field = typeof(MissionScreen).GetField("_missionCameraModeLogic",
-                    BindingFlags.Instance | BindingFlags.NonPublic);
-                _originalCameraModeLogic = field?.GetValue(MissionScreen);
-                MissionScreen.SetFieldValue("_missionCameraModeLogic", null);
-
-                if (!isFreeCam)
-                    MissionScreen.SetCameraLockState(true);
-            }
-            else
-            {
-                MissionScreen.SetFieldValue("_missionCameraModeLogic", _originalCameraModeLogic);
-                _originalCameraModeLogic = null;
-
-                if (!isFreeCam)
-                    MissionScreen.SetCameraLockState(false);
             }
 
-            InformationManager.DisplayMessage(
-                new InformationMessage("PerspectiveLock: " + (_isPerspectiveLocked ? "ON" : "OFF"),
-                    Color.ConvertStringToColor("#FFDDDDFF")));
+            // Mouse scroll for zooming
+            float mouseScroll = Input.GetDeltaMouseScroll();
+            if (mouseScroll != 0f)
+            {
+                _customDistance -= (mouseScroll / 120f) * 0.4f;
+                _customDistance = MBMath.ClampFloat(_customDistance, 1.5f, 6.0f);
+            }
+
+            // Custom camera values. Do not edit.
+            if (_customCamera == null)
+            {
+                _customCamera = Camera.CreateCamera();
+            }
+
+            MatrixFrame matrixFrame = MatrixFrame.Identity;
+            matrixFrame.rotation.RotateAboutSide(1.5707964f);
+
+            Vec3 lookDir = targetAgent.LookDirection;
+            matrixFrame.rotation.RotateAboutForward(lookDir.AsVec2.RotationInRadians);
+
+            float clampedZ = TaleWorlds.Library.MathF.Clamp(lookDir.z, -1f, 1f);
+            matrixFrame.rotation.RotateAboutSide(TaleWorlds.Library.MathF.Asin(clampedZ));
+
+            Vec3 eyePos = targetAgent.VisualPosition + new Vec3(0f, 0f, targetAgent.GetEyeGlobalHeight());
+
+            float heightOffset = 0.35f + (_customDistance * 0.05f);
+            Vec3 camPos = eyePos - (lookDir * _customDistance) + (Vec3.Up * heightOffset);
+
+            matrixFrame.origin = camPos;
+            _customCamera.Frame = matrixFrame;
+
+            _customCamera.SetFovVertical(0.785398f, 1.7777f, 0.1f, 1000f);
+
+            MissionScreen.CustomCamera = _customCamera;
         }
 
         private MissionPeer GetMyMissionPeer()
@@ -133,16 +215,6 @@ namespace MPSpecCamLocker
             {
                 return new List<Agent>();
             }
-        }
-    }
-
-    public static class MissionScreenExtensions
-    {
-        public static void SetFieldValue(this MissionScreen screen, string fieldName, object value)
-        {
-            var field = typeof(MissionScreen).GetField(fieldName,
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            field?.SetValue(screen, value);
         }
     }
 }
