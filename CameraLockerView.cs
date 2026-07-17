@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using TaleWorlds.Core;
 using TaleWorlds.Engine;
+using TaleWorlds.Engine.GauntletUI;
 using TaleWorlds.InputSystem;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
@@ -26,6 +27,12 @@ namespace MPSpecCamLocker
 
         private Camera _customCamera;
         private float _customDistance = 3.2f;
+
+        // UI variables
+        private GauntletLayer _menuLayer;
+        private SpectatorMenuVM _menuVM;
+        private bool _isMenuOpen;
+        private float _menuRefreshTimer = 0f;
 
         public override void OnMissionScreenInitialize()
         {
@@ -64,7 +71,6 @@ namespace MPSpecCamLocker
 
             if (nextAgent != current)
             {
-                
                 PropertyInfo prop = typeof(MissionScreen).GetProperty("LastFollowedAgent", BindingFlags.Public | BindingFlags.Instance);
                 if (prop != null)
                 {
@@ -74,9 +80,46 @@ namespace MPSpecCamLocker
             }
         }
 
+        //  UI Settings
+        private void CloseMenu()
+        {
+            if (_menuLayer != null)
+            {
+                _menuLayer.InputRestrictions.SetInputRestrictions(false, InputUsageMask.Invalid);
+                MissionScreen.RemoveLayer(_menuLayer);
+                _menuLayer = null;
+            }
+
+            _isMenuOpen = false;
+        }
+
+        private void ForceSpectateAgent(Agent target)
+        {
+            if (target == null) return;
+
+            PropertyInfo prop = typeof(MissionScreen).GetProperty("LastFollowedAgent", BindingFlags.Public | BindingFlags.Instance);
+            if (prop != null)
+            {
+                MethodInfo setter = prop.GetSetMethod(true);
+                setter?.Invoke(MissionScreen, new object[] { target });
+            }
+
+            CloseMenu();
+        }
+
         public override void OnMissionScreenTick(float dt)
         {
             if (Mission.Current == null) return;
+
+            if (_isMenuOpen && _menuVM != null)
+            {
+                _menuRefreshTimer += dt;
+                if (_menuRefreshTimer >= 1.0f)
+                {
+                    _menuVM.RefreshPlayers();
+                    _menuRefreshTimer = 0f;
+                }
+            }
 
             if (_cachedPeer == null)
                 _cachedPeer = GetMyMissionPeer();
@@ -85,8 +128,40 @@ namespace MPSpecCamLocker
                 _cachedTeam = _cachedPeer.Team;
 
             bool isObserving = IsObserving();
+            bool isTrueSpectator = IsSpectator();
 
-            // F8
+            // UI
+            if (Input.IsKeyReleased(InputKey.M) && isTrueSpectator)
+            {
+                _isMenuOpen = !_isMenuOpen;
+
+                if (_isMenuOpen)
+                {
+                    if (_menuVM == null)
+                    {
+                        _menuVM = new SpectatorMenuVM(ForceSpectateAgent);
+                    }
+                    else
+                    {
+                        _menuVM.RefreshPlayers();
+                    }
+
+                    _menuLayer = new GauntletLayer("GauntletLayer", 100, false);
+                    _menuLayer.LoadMovie("SpectatorMenuPrefab", _menuVM);
+                    _menuLayer.InputRestrictions.SetInputRestrictions(true, InputUsageMask.All);
+                    MissionScreen.AddLayer(_menuLayer);
+                }
+                else
+                {
+                    CloseMenu();
+                }
+            }
+
+            if (!isTrueSpectator && _isMenuOpen)
+            {
+                CloseMenu();
+            }
+
             if (Input.IsKeyReleased(InputKey.F8) && isObserving)
             {
                 _isPerspectiveLocked = !_isPerspectiveLocked;
@@ -95,21 +170,19 @@ namespace MPSpecCamLocker
                         Color.ConvertStringToColor("#FFDDDDFF")));
             }
 
-            // Change the current player your spectating 
             if (_isPerspectiveLocked && isObserving)
             {
                 if (Input.IsKeyReleased(InputKey.LeftMouseButton))
                 {
-                    SwitchSpectatedAgent(1); // next player
+                    SwitchSpectatedAgent(1);
                 }
                 else if (Input.IsKeyReleased(InputKey.RightMouseButton))
                 {
-                    SwitchSpectatedAgent(-1); // previous
+                    SwitchSpectatedAgent(-1);
                 }
             }
 
             Agent targetAgent = MissionScreen.LastFollowedAgent;
-
             bool isTargetValid = targetAgent != null && targetAgent.IsActive() && targetAgent.AgentVisuals != null;
 
             if (!_isPerspectiveLocked || !isObserving || !isTargetValid)
@@ -126,15 +199,17 @@ namespace MPSpecCamLocker
                 return;
             }
 
-            // Mouse scroll for zooming
-            float mouseScroll = Input.GetDeltaMouseScroll();
-            if (mouseScroll != 0f)
+            // Zoom logic
+            if (!_isMenuOpen)
             {
-                _customDistance -= (mouseScroll / 120f) * 0.4f;
-                _customDistance = MBMath.ClampFloat(_customDistance, 1.5f, 6.0f);
+                float mouseScroll = Input.GetDeltaMouseScroll();
+                if (mouseScroll != 0f)
+                {
+                    _customDistance -= (mouseScroll / 120f) * 0.4f;
+                    _customDistance = MBMath.ClampFloat(_customDistance, 1.5f, 6.0f);
+                }
             }
-
-            // Custom cam
+            // Custom Cam
             if (_customCamera == null)
             {
                 _customCamera = Camera.CreateCamera();
@@ -148,7 +223,6 @@ namespace MPSpecCamLocker
             float heightOffset = 0.35f + (_customDistance * 0.05f);
             Vec3 targetCamPos = eyePos - (targetLookDir * _customDistance) + (Vec3.Up * heightOffset);
 
-            // Collision check
             float collisionDistance;
             if (Mission.Current.Scene.RayCastForClosestEntityOrTerrain(eyePos, targetCamPos, out collisionDistance, 0.2f, BodyFlags.CommonCollisionExcludeFlags))
             {
@@ -158,7 +232,6 @@ namespace MPSpecCamLocker
                 targetCamPos = eyePos + (dir * safeDistance);
             }
 
-            // SMOOTH TRACKING
             if (_lastSmoothedTarget != targetAgent)
             {
                 _smoothedLookDir = targetLookDir;
@@ -166,7 +239,7 @@ namespace MPSpecCamLocker
                 _lastSmoothedTarget = targetAgent;
             }
             else
-            {   // Decrase 15f to lower the tracking smoothness, increase to make it smoother.
+            {
                 float t = TaleWorlds.Library.MathF.Clamp(15f * dt, 0f, 1f);
 
                 _smoothedLookDir = (_smoothedLookDir * (1f - t)) + (targetLookDir * t);

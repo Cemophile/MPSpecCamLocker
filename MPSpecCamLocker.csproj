@@ -43,6 +43,15 @@
 		<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.ScreenSystem.dll">
 			<Private>False</Private>
 		</Reference>
+		<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.Engine.GauntletUI.dll">
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.GauntletUI.Data.dll">
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.GauntletUI.PrefabSystem.dll">
+			<Private>False</Private>
+		</Reference>
 	<Reference Include="$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.Diamond.dll">
 		<Private>False</Private>
 	</Reference>

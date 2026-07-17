@@ -1,0 +1,131 @@
+<Prefab>
+	<Window>
+		<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" HorizontalAlignment="Center" VerticalAlignment="Center" AcceptsMouseEvents="true">
+			<Children>
+
+				<Widget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="1400" SuggestedHeight="850" HorizontalAlignment="Center" VerticalAlignment="Center" Sprite="BlankWhiteSquare_9" Color="#000000CC">
+					<Children>
+
+						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" MarginLeft="30" MarginRight="30" MarginTop="30" MarginBottom="30" StackLayout.LayoutMethod="HorizontalLeftToRight">
+							<Children>
+
+								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="VerticalBottomToTop">
+									<Children>
+
+										<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" MarginBottom="10" Sprite="BlankWhiteSquare_9" Color="#2980B9FF">
+											<Children>
+												<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Text="Attacker Team" Brush.FontSize="20" Brush.FontColor="#FFFFFFFF" AlignmentX="Center" AlignmentY="Center" />
+											</Children>
+										</Widget>
+
+										<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
+											<Children>
+												<Standard.VerticalScrollbar Id="Team1Scrollbar" WidthSizePolicy="CoverChildren" HeightSizePolicy="StretchToParent" HorizontalAlignment="Right" VerticalAlignment="Center" MarginRight="0"/>
+
+												<ScrollablePanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" MarginRight="25" ClipRect="ClipRect" ClipContents="true" InnerPanel="ClipRect\Grid" VerticalScrollbar="..\Team1Scrollbar\Scrollbar" AutoHideScrollBars="true" AcceptsMouseEvents="true">
+													<Children>
+														<Widget Id="ClipRect" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" ClipContents="true">
+															<Children>
+																<NavigatableGridWidget Id="Grid" DataSource="{Team1Players}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" ColumnCount="2" DefaultCellWidth="310" DefaultCellHeight="35">
+																	<ItemTemplate>
+
+																		<Widget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="300" SuggestedHeight="30">
+																			<Children>
+
+																				<ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Command.Click="ExecuteToggleHighlight" MarginRight="65">
+																					<Children>
+																						<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Sprite="BlankWhiteSquare_9" Color="@RowColor" DoNotAcceptEvents="true"/>
+																					</Children>
+																				</ButtonWidget>
+
+																				<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Text="@Name" Brush.FontSize="18" Brush.FontColor="#FFFFFFFF" AlignmentY="Center" MarginLeft="10" MarginRight="65" DoNotAcceptEvents="true" />
+
+																				<ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" SuggestedWidth="60" HorizontalAlignment="Right" Brush="Button.Main" Command.Click="ExecuteSpectate">
+																					<Children>
+																						<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Sprite="BlankWhiteSquare_9" Color="#2C3E50FF" DoNotAcceptEvents="true">
+																							<Children>
+																								<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Text="SPEC" Brush.FontSize="14" Brush.FontColor="#FFFFFFFF" AlignmentX="Center" AlignmentY="Center" DoNotAcceptEvents="true"/>
+																							</Children>
+																						</Widget>
+																					</Children>
+																				</ButtonWidget>
+
+																			</Children>
+																		</Widget>
+
+																	</ItemTemplate>
+																</NavigatableGridWidget>
+															</Children>
+														</Widget>
+													</Children>
+												</ScrollablePanel>
+											</Children>
+										</Widget>
+									</Children>
+								</ListPanel>
+
+								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="VerticalBottomToTop" MarginLeft="40">
+									<Children>
+
+										<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" MarginBottom="10" Sprite="BlankWhiteSquare_9" Color="#C0392BFF">
+											<Children>
+												<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Text="Defender Team" Brush.FontSize="20" Brush.FontColor="#FFFFFFFF" AlignmentX="Center" AlignmentY="Center" />
+											</Children>
+										</Widget>
+
+										<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
+											<Children>
+												<Standard.VerticalScrollbar Id="Team2Scrollbar" WidthSizePolicy="CoverChildren" HeightSizePolicy="StretchToParent" HorizontalAlignment="Right" VerticalAlignment="Center" MarginRight="0"/>
+
+												<ScrollablePanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" MarginRight="25" ClipRect="ClipRect" ClipContents="true" InnerPanel="ClipRect\Grid" VerticalScrollbar="..\Team2Scrollbar\Scrollbar" AutoHideScrollBars="true" AcceptsMouseEvents="true">
+													<Children>
+														<Widget Id="ClipRect" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" ClipContents="true">
+															<Children>
+																<NavigatableGridWidget Id="Grid" DataSource="{Team2Players}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" ColumnCount="2" DefaultCellWidth="310" DefaultCellHeight="35">
+																	<ItemTemplate>
+
+																		<Widget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="300" SuggestedHeight="30">
+																			<Children>
+
+																				<ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Command.Click="ExecuteToggleHighlight" MarginRight="65">
+																					<Children>
+																						<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Sprite="BlankWhiteSquare_9" Color="@RowColor" DoNotAcceptEvents="true"/>
+																					</Children>
+																				</ButtonWidget>
+
+																				<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Text="@Name" Brush.FontSize="18" Brush.FontColor="#FFFFFFFF" AlignmentY="Center" MarginLeft="10" MarginRight="65" DoNotAcceptEvents="true" />
+
+																				<ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" SuggestedWidth="60" HorizontalAlignment="Right" Brush="Button.Main" Command.Click="ExecuteSpectate">
+																					<Children>
+																						<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Sprite="BlankWhiteSquare_9" Color="#2C3E50FF" DoNotAcceptEvents="true">
+																							<Children>
+																								<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Text="SPEC" Brush.FontSize="14" Brush.FontColor="#FFFFFFFF" AlignmentX="Center" AlignmentY="Center" DoNotAcceptEvents="true"/>
+																							</Children>
+																						</Widget>
+																					</Children>
+																				</ButtonWidget>
+
+																			</Children>
+																		</Widget>
+
+																	</ItemTemplate>
+																</NavigatableGridWidget>
+															</Children>
+														</Widget>
+													</Children>
+												</ScrollablePanel>
+											</Children>
+										</Widget>
+									</Children>
+								</ListPanel>
+
+							</Children>
+						</ListPanel>
+
+					</Children>
+				</Widget>
+
+			</Children>
+		</Widget>
+	</Window>
+</Prefab>

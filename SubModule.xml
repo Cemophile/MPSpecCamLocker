@@ -2,7 +2,7 @@
 <Module>
 	<Name value="MPSpecCamLocker"/>
 	<Id value="MPSpecCamLocker"/>
-	<Version value="v1.0.0"/>
+	<Version value="v2.0.0"/>
 	<ModuleCategory value="MultiplayerOptional"/>
 	<SubModules>
 		<SubModule>
